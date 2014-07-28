@@ -1,5 +1,6 @@
 module.exports = Swarm
 
+var debug = require('debug')('bittorrent-swarm')
 var EventEmitter = require('events').EventEmitter
 var inherits = require('inherits')
 var net = require('net') // or chrome-net
@@ -201,7 +202,7 @@ Pool.prototype.addSwarm = function (swarm) {
 
   if (this.listening) {
     process.nextTick(function () {
-      swarm.emit('listening')
+      swarm.emit('listening', swarm.port)
     })
   }
 
@@ -260,8 +261,6 @@ function Swarm (infoHash, peerId, opts) {
   this.peerId = typeof peerId === 'string'
     ? new Buffer(peerId, 'utf8')
     : peerId
-
-  this.log = opts.log || console.log
 
   this.handshake = opts.handshake // handshake extensions
   this.port = 0
@@ -460,7 +459,7 @@ Swarm.prototype._drain = function () {
   var parts = peer.addr.split(':')
   var conn = net.connect(parts[1], parts[0])
 
-  self.log('Connecting to ' + peer.addr, '(numConns', this.numConns, 'numPeers', this.numPeers + ')')
+  debug('Connecting to ' + peer.addr, '(numConns', this.numConns, 'numPeers', this.numPeers + ')')
 
   // Peer must respond to handshake in timely manner
   var timeout = setTimeout(function () {
@@ -509,7 +508,7 @@ Swarm.prototype._drain = function () {
 
   conn.on('connect', onconnect)
   conn.on('error', function (err) {
-    self.log('Failed to connect to ' + peer.addr)
+    debug('Failed to connect to ' + peer.addr)
     // TODO: retry or end connection?
   })
 }
